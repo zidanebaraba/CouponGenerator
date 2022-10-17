@@ -68,7 +68,10 @@ def status():
             coupon)
         c_rows = cursor.fetchone()
         df = df.append(c_rows, ignore_index=True)
-        return render_template('redeem.html', exp=str(df['expiration'][0]), status=str(df['status'][0]))
+        if c_rows is None:
+            return render_template('result.html', hasil="Voucher yang anda masukan salah!")
+        else:
+            return render_template('redeem.html', exp=str(df['expiration'][0]), status=str(df['status'][0]))
     except Exception as e:
         print(e)
     finally:
@@ -86,15 +89,17 @@ def redeem():
         cursor.execute("SELECT coupon, status from tbl_voucher where coupon =%s limit 1", coupon)
         c_rows = cursor.fetchone()
         df = df.append(c_rows, ignore_index=True)
-        if df['status'][0] == 2:
-            cursor.execute("update tbl_voucher set status = 3 where coupon = %s", coupon)
-            conn.commit()
-            print(df)
-            return render_template('result.html', hasil="Reedem Sukses!")
-        elif df['status'][0] == 4:
-            return render_template('result.html', hasil="Voucher is expired!")
-        else:
-            return render_template('result.html', hasil="Voucher is already redeemed!")
+        if c_rows is not None:
+            if df['status'][0] == 2:
+                cursor.execute("update tbl_voucher set status = 3 where coupon = %s", coupon)
+                conn.commit()
+                return render_template('result.html', hasil="Reedem Sukses!")
+            elif df['status'][0] == 4:
+                return render_template('result.html', hasil="Voucher is expired!")
+            elif df['status'][0] == 3:
+                return render_template('result.html', hasil="Voucher is already redeemed!")
+        elif c_rows is None:
+            return render_template('result.html', hasil="Voucher yang anda masukan salah!")
     except Exception as e:
         print(e)
     finally:
